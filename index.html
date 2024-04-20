@@ -1,217 +1,452 @@
 <!DOCTYPE HTML>
 <!--
-	Powered by Kaiwen Guo, Mohan Lu
+    Powered by Kaiwen Guo, Mohan Lu
 -->
 <html>
-	<head>
-		<title>NY Real Time Transit Map</title>
-		<meta charset="utf-8" />
-		<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
-		<link rel="stylesheet" href="assets/css/main.css" />
-		<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-		
-		<noscript><link rel="stylesheet" href="assets/css/noscript.css" /></noscript>
-	</head>
-	<body class="is-preload">
+    <head>
+        <title id="page-title">NY Real Time Transit Map</title>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+        <link rel="stylesheet" href="assets/css/main.css" />
+        <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+        <noscript><link rel="stylesheet" href="assets/css/noscript.css" /></noscript>
+    </head>
+    <body class="is-preload">
+        <!-- Wrapper -->
+        <div id="wrapper">
+            <!-- Header -->
+            <header id="header">
+                <div class="content">
+                    <div class="inner">
+                        <h1 id="site-title">NY Transit</h1>
+                        <p id="site-description">A web application to offer real-time updates, schedules, and transit information for New York City public transportation system, utilizing the MTA API.</p>
+                    </div>
+                    
+                    <h2 id="site-title">Weather Information</h1>
+                    <div id="weather">
+                        <p id="temp"></p>
+                        <p id="condition"></p>
+                        <p id="humidity"></p>
+                        <p id="recommendation"></p>
+                        <p id="error"></p>
+                    </div>
+                    <script>
+                        fetch('/weather')
+                            .then(response => {
+                                if (!response.ok) {
+                                    throw new Error('Network response was not ok');
+                                }
+                                return response.json();  // Parses the JSON
+                            })
+                            .then(data => {
+                                if (data.cod && data.cod === 200) {
+                                    const temperatureCelsius = data.main.temp - 273.15;  // Convert from Kelvin to Celsius
+                                    document.getElementById('temp').innerText = `Temperature: ${temperatureCelsius.toFixed(2)} °C`;
+                                    document.getElementById('condition').innerText = `Condition: ${data.weather[0].main} (${data.weather[0].description})`;
+                                    document.getElementById('humidity').innerText = `Humidity: ${data.main.humidity}%`;
 
-		<!-- Wrapper -->
-			<div id="wrapper">
+                                    // Recommendations based on weather conditions
+                                    let recommendation = '';
+                                    if (data.weather[0].main.includes('Rain')) {
+                                        recommendation = 'It is raining. You should use an umbrella.';
+                                    } else if (temperatureCelsius > 25) {
+                                        recommendation = 'It is hot outside. Wear light and breathable clothing.';
+                                    } else if (temperatureCelsius < 10) {
+                                        recommendation = 'It is cold outside. Consider wearing more layers to stay warm.';
+                                    } else {
+                                        recommendation = 'Weather is moderate. Dress comfortably.';
+                                    }
+                                    document.getElementById('recommendation').innerText = recommendation;
 
-				<!-- Header -->
-					<header id="header">
+                                } else {
+                                    document.getElementById('error').innerText = `Error: ${data.message || 'Failed to retrieve data'}`;
+                                }
+                            })
+                            .catch(error => {
+                                console.error('Fetch error:', error);
+                                document.getElementById('error').innerText = 'Failed to load data';
+                            });
+                    </script>
+                    
+                    
+                    
+                </div>
+                <nav>
+                    <ul>
+                        <li><a href="#intro" id="nav-intro">Intro</a></li>
+                        <li><a href="#map" id="nav-map"> Map</a></li>
+                        <li><a href="#about" id="nav-about">About</a></li>
+                        <li><a href="#contact" id="nav-contact">Contact</a></li>
+                        <li><a href="#login" id="nav-login">Login</a></li>
+                        <select id="language-select">
+                            <option value="en">English</option>
+                            <option value="zh">中文</option>
+                            <option value="es">Español</option>
+                        </select>
+                    </ul>
+                </nav>
+            </header>
 
-						<!--<div class="logo">
+            <!-- Main -->
+            <div id="main">
+                <!-- Intro -->
+                <article id="intro">
+                    <h2 class="major" id="intro-title">Intro</h2>
+                    <!-- <span class="image main"><img src="images/pic01.jpg" alt="" /></span> -->
+                    <p id="intro-description">We have built an awesome real-time reactive map that cooperates with the MTA API. Please check out our <a href="https://map.mta.info/">awesome map</a>. We are <a href="#about">awesome people</a>. Please <a href="#contact">let us know</a> if you have any questions or concerns.</p>
+                </article>
 
-							<span class="icon fa-solid fa-train-subway"></span>
-						</div> -->
-						<div class="content">
-							<div class="inner">
-								<h1>NY Transit</h1>
-								<p>A web application to offer real-time updates, schedules, and transit information for New York City public transportation system, utilizing the MTA API</p>
-							</div>
-						</div>
-						<nav>
-							<ul>
-								<li><a href="#intro">Intro</a></li>
-								<li><a href="#map">Map</a></li>
-								<li><a href="#about">About</a></li>
-								<li><a href="#contact">Contact</a></li>
-								<li><a href="#login">Login</a></li>
-								<!--<li><a href="#elements">Elements</a></li>-->
-							</ul>
-						</nav>
-					</header>
+                <!-- Map -->
+                <article id="map">
+                    <h2 class="major" id="map-title">Map</h2>
+                    <p id="map-description">The awesome map is shown below.</p>
+                    <li><a href="https://new.mta.info/map/5341" id="nav-paper-map">Paper Map</a></li>
+                    <li><a href="https://map.mta.info/" id="nav-rt-map">Real Time Map</a></li>
+                    <div id="mapid" style="height: 400px;"></div>
+                </article>
 
-				<!-- Main -->
-					<div id="main">
+                <!-- About -->
+                <article id="about">
+                    <h2 class="major" id="about-title">About</h2>
+                    <span class="image main"><img src="images/IMG_9929.JPG" alt="Kaiwen Guo and Mohan Lu" /></span>
+                    <p id="about-description">Yes, that's me Kaiwen Guo and Mohan Lu up there :P</p>
+                </article>
 
-						<!-- Intro -->
-							<article id="intro">
-								<h2 class="major">Intro</h2>
-								<span class="image main"><img src="images/pic01.jpg" alt="" /></span>
-								<p>We have built a awesome real time reactive map that cooperates with MTA API. Please check out our <a href="#map">awesome map</a>.</p>
-								<p>We are <a href="#about">awesome people</a>. Please <a href="#contact">let us know</a> if you have any questions or concerns.
-							</article>
+                <!-- Contact -->
+                <article id="contact">
+                    <h2 class="major" id="contact-title">Contact</h2>
+                    <form action="https://formspree.io/f/xdoqpajb" method="POST">
+                        <div class="fields">
+                            <div class="field half">
+                                <label for="name" id="label-name">Name</label>
+                                <input type="text" name="name" id="name" />
+                            </div>
+                            <div class="field half">
+                                <label for="email" id="label-email">Email</label>
+                                <input type="email" name="email" id="email" />
+                            </div>
+                            <div class="field">
+                                <label for="message" id="label-message">Message</label>
+                                <textarea name="message" id="message" rows="4"></textarea>
+                            </div>
+                        </div>
+                        <ul class="actions">
+                            <li><input type="submit" value="Send Message" class="primary" /></li>
+                            <li><input type="reset" value="Reset" /></li>
+                        </ul>
+                    </form>
+                </article>
 
-						<!-- Map -->
-						<article id="map">
-							<h2 class="major">Map</h2>
-							<p>The awesome map is shown below</p>
-							<p>But it is not fully functional</p>
-							<div id="mapid" style="height: 400px;"></div>
-							<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-	
-							<script>
-								function initializeMap() {
-									var mymap = L.map('mapid').setView([40.6942, -73.9866], 15);
-									L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-										attribution: 'Map data &copy; <a href="https://openstreetmap.org">OpenStreetMap</a> contributors',
-										maxZoom: 18,
-									}).addTo(mymap);
-									var marker = L.marker([40.6942, -73.9866]).addTo(mymap);
-							
-									// Invalidate size and re-center the map
-									mymap.invalidateSize();
-									mymap.setView([40.6942, -73.9866], 15);
-								}
-							
-								// Adjusted to ensure the map container is ready
-								window.onload = function() {
-									setTimeout(initializeMap, 500); // Adjust the delay as needed
-								};
-							</script>
-							
-						</article>
-						
+                <!-- Login -->
+                <article id="login">
+                    <h2 class="major" id="login-title">Login</h2>
+                    <form id="login-form">
+                        <div class="fields">
+                            <div class="field half">
+                                <label for="username-login">User Name</label>
+                                <input type="text" id="username-login" />
+                            </div>
+                            <div class="field half">
+                                <label for="password-login">Password</label>
+                                <input type="password" id="password-login" />
+                            </div>
+                        </div>
+                        <ul class="actions">
+                            <li><input type="submit" value="Login" class="primary" /></li>
+                        </ul>
+                    </form>
+                </article>
+                
+                
 
-						<!-- About -->
-							<article id="about">
-								<h2 class="major">About</h2>
-								<span class="image main"><img src="images/IMG_9929.JPG" alt="" /></span>
-								<p>Yes thats me Kaiwen Guo and Mohan Lu up there :P</p>
-							</article>
+                <article id="register">
+                    <h2 class="major">Register</h2>
+                    <form id="register-form">
+                        <div class="field">
+                            <label for="username-register">Username</label>
+                            <input type="text" id="username-register" name="username" required>
+                        </div>
+                        <div class="field">
+                            <label for="password-register">Password</label>
+                            <input type="password" id="password-register" name="password" required>
+                        </div>
+                        <ul class="actions">
+                            <li><input type="submit" value="Register" class="primary"></li>
+                        </ul>
+                    </form>
+                </article>
+                
+                <article id="favorite-trains" style="display:none;">
+                    <h2 class="major">Favorite Trains</h2>
+                    <form id="train-form">
+                        <input type="text" id="train-input" placeholder="Add a train (e.g., A, 1)" required>
+                        <button type="submit">Add Train</button>
+                    </form>
+                    <div id="train-list"></div>
+                </article>
+                
+                
+            </div>
 
-						<!-- Contact -->
-							<article id="contact">
-								<h2 class="major">Contact</h2>
-								<form action="https://formspree.io/f/xdoqpajb" method="POST">
-									<div class="fields">
-										<div class="field half">
-											<label for="name">Name</label>
-											<input type="text" name="name" id="name" />
-										</div>
-										<div class="field half">
-											<label for="email">Email</label>
-											<input type="email" name="email" id="email" />
-										</div>
-										<div class="field">
-											<label for="message">Message</label>
-											<textarea name="message" id="message" rows="4"></textarea>
-										</div>
-									</div>
-									<ul class="actions">
-										<li><input type="submit" value="Send Message" class="primary" /></li>
-										<li><input type="reset" value="Reset" /></li>
-									</ul>
-								</form>
-								
-								<ul class="icons">
-									<li><a href="https://www.linkedin.com/in/kaiwen-guo-a28a40289/" class="icon brands fa-linkedin"><span class="label">Linkedin</span></a></li>
-									<li><a href="https://www.instagram.com/guo_buzai?igsh=N3k0MTBvbmdhYjl3&utm_source=qr" class="icon brands fa-instagram"><span class="label">Instagram</span></a></li>
-									<li><a href="https://github.com/kg3354?tab=repositories" class="icon brands fa-github"><span class="label">GitHub</span></a></li>
-								</ul>
-							</article>
+            <!-- Footer -->
+            <footer id="footer">
+                <p class="copyright">&copy; Great Design By Us.</p>
+            </footer>
+        </div>
 
-								<!-- Login -->
-							<article id="login">
-								<h2 class="major">Login</h2>
-								<form action="http://localhost:3000/login" method="POST"> <!-- Add this line -->
-									<div class="fields">
-										<div class="field half">
-											<label for="username">User Name</label>
-											<input type="text" name="username" id="username" />
-										</div>
-											<div class="field half">
-											<label for="password">Password</label>
-											<input type="password" name="password" id="password" />
-										</div>
-									</div>
-									<ul class="actions">
-										<li><input type="submit" value="Login" class="primary" /></li>
-									</ul>
+        <!-- BG -->
+        <div id="bg"></div>
 
-								</form> <!-- And this line -->
-								<li><a href="#register">Register Now</a></li>
-							</article>
+        <!-- Scripts -->
+        <script src="assets/js/jquery.min.js"></script>
+        <script src="assets/js/browser.min.js"></script>
+        <script src="assets/js/breakpoints.min.js"></script>
+        <script src="assets/js/util.js"></script>
+        <script src="assets/js/main.js"></script>
+        <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+        <script src="assets/js/mapInit.js"></script>
+        <script>
+            const texts = {
+                "site-title": {
+                    en: "NY Transit",
+                    zh: "纽约交通",
+                    es: "Tránsito de NY"
+                },
+                "site-description": {
+                    en: "A web application to offer real-time updates, schedules, and transit information for New York City public transportation system, utilizing the MTA API.",
+                    zh: "一个提供纽约市公共交通系统实时更新、时间表和交通信息的网络应用程序，利用MTA API。",
+                    es: "Una aplicación web que ofrece actualizaciones en tiempo real, horarios e información del sistema de transporte público de Nueva York, utilizando la API de MTA."
+                },
+                "intro-title": {
+                    en: "Intro",
+                    zh: "介绍",
+                    es: "Introducción"
+                },
+                "intro-description": {
+                    en: "We have built an awesome real-time reactive map that cooperates with the MTA API. Please check out our <a href='https://map.mta.info/'>awesome map</a>.",
+                    zh: "我们已经建立了一个与MTA API合作的很棒的实时反应地图。请查看我们的<a href='https://map.mta.info/'>很棒的地图</a>。",
+                    es: "Hemos construido un mapa reactivo en tiempo real que coopera con la API de MTA. Por favor, consulte nuestro <a href='https://map.mta.info/'>mapa impresionante</a>."
+                },
+                "map-title": {
+                    en: "Map",
+                    zh: "地图",
+                    es: "Mapa"
+                },
+                "map-description": {
+                    en: "The awesome map is shown below.",
+                    zh: "下面显示的是很棒的地图。",
+                    es: "El mapa impresionante se muestra a continuación."
+                },
+                "nav-paper-map": {
+                    en: "Paper Map",
+                    zh: "纸质地图",
+                    es: "Mapa de papel"
+                },
+                "nav-real-map": {
+                    en: "Real Time Map",
+                    zh: "实时地图",
+                    es: "Mapa en tiempo real"
+                },
+                "about-title": {
+                    en: "About",
+                    zh: "关于",
+                    es: "Acerca de"
+                },
+                "about-description": {
+                    en: "Yes, that's me Kaiwen Guo and Mohan Lu up there :P",
+                    zh: "是的，那是我和Mohan Lu :P",
+                    es: "Sí, somos Kaiwen Guo y Mohan Lu allí arriba :P"
+                },
+                "contact-title": {
+                    en: "Contact",
+                    zh: "联系",
+                    es: "Contacto"
+                },
+                "label-name": {
+                    en: "Name",
+                    zh: "姓名",
+                    es: "Nombre"
+                },
+                "label-email": {
+                    en: "Email",
+                    zh: "电子邮件",
+                    es: "Correo electrónico"
+                },
+                "label-message": {
+                    en: "Message",
+                    zh: "信息",
+                    es: "Mensaje"
+                },
+                "login-title": {
+                    en: "Login",
+                    zh: "登录",
+                    es: "Iniciar"
+                },
+                "label-username": {
+                    en: "User Name",
+                    zh: "用户名",
+                    es: "Nombre de usuario"
+                },
+                "label-password": {
+                    en: "Password",
+                    zh: "密码",
+                    es: "Contraseña"
+                },
+                "register-title": {
+                    en: "Register",
+                    zh: "注册",
+                    es: "Registrarse"
+                },
+                "label-username-register": {
+                    en: "User Name",
+                    zh: "用户名",
+                    es: "Nombre de usuario"
+                },
+                "label-password-register": {
+                    en: "Password",
+                    zh: "密码",
+                    es: "Contraseña"
+                },
+                "nav-intro": {
+                    en: "Intro",
+                    zh: "介绍",
+                    es: "Introducción"
+                },
+                "nav-map": {
+                    en: "Map",
+                    zh: "地图",
+                    es: "Mapa"
+                },
+                "nav-about": {
+                    en: "About",
+                    zh: "关于",
+                    es: "AcercaDe"
+                },
+                "nav-contact": {
+                    en: "Contact",
+                    zh: "联系",
+                    es: "Contacto"
+                },
+                "nav-login": {
+                    en: "Login",
+                    zh: "登录",
+                    es: "Iniciar"
+                },
+                "link-register": {
+                    en: "Register Now",
+                    zh: "现在注册",
+                    es: "Registrarse Ahora"
+                }
+            };
 
-							<article id="register">
-								<h2 class="major">register</h2>
-								<form action="http://localhost:3000/register" method="POST"> <!-- Add this line -->
-									<div class="fields">
-										<div class="field half">
-											<label for="username">User Name</label>
-											<input type="text" name="username" id="username" />
-										</div>
-											<div class="field half">
-											<label for="password">Password</label>
-											<input type="password" name="password" id="password" />
-										</div>
-									</div>
-									<ul class="actions">
-										<li><input type="submit" value="Register" class="primary" /></li>
-									</ul>
+            document.getElementById('language-select').addEventListener('change', function() {
+                const lang = this.value;
+                Object.keys(texts).forEach(id => {
+                    const element = document.getElementById(id);
+                    if (element) element.innerHTML = texts[id][lang];
+                });
+            });
 
-								</form> <!-- And this line -->
-						
-							</article>
+          
+        </script>
+    </body>
+    <script>
+        document.getElementById('login-form').addEventListener('submit', function(event) {
+            // event.preventDefault();
+        
+            const id = document.getElementById('username-login').value;
+            const password = document.getElementById('password-login').value;
+        
+            fetch('/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ id: id, password: password })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.loginSuccess) {
+                    console.log('Login successful');
+                    document.getElementById('login-title').innerText = `Logged in as: ${data.userId}`;
+                    document.getElementById('login-form').style.display = 'none';
+                    document.getElementById('favorite-trains').style.display = 'block'; // Show favorite trains section
+                    loadFavoriteTrains(data.userId); // Function to load favorite trains
+                } else {
+                    alert(data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Failed to connect to the server.');
+            });
+        });
+        </script>
+        
+        
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                // Handle registration
+                document.getElementById('register-form').addEventListener('submit', function(event) {
+                    event.preventDefault(); 
+                    const id = document.getElementById('username-register').value;
+                    const password = document.getElementById('password-register').value;
+            
+                    fetch('/register', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ id, password })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        alert(data.message);
+                        if (data.registerSuccess) {
+                            console.log('Registration successful');
+                        }
+                    })
+                    .catch(error => console.error('Error:', error));
+                });
+            
+                // Load and manage favorite trains
+                function loadFavoriteTrains(userId) {
+                    fetch(`/favorites/${userId}`)
+                    .then(response => response.json())
+                    .then(trains => {
+                        const trainList = document.getElementById('train-list');
+                        trainList.innerHTML = ''; // Clear existing
+                        trains.forEach(train => {
+                            const trainElement = document.createElement('div');
+                            trainElement.textContent = train;
+                            trainList.appendChild(trainElement);
+                        });
+                    });
+                }
+            
+                // Handle adding a new favorite train
+                document.getElementById('train-form').addEventListener('submit', function(event) {
+                    event.preventDefault();
+                    const train = document.getElementById('train-input').value;
+                    const userId = document.getElementById('username-login').value; // Ensure this ID is available
+            
+                    fetch('/favorites/add', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ id: userId, train })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            console.log('Train added');
+                            loadFavoriteTrains(userId); // Reload the list
+                        } else {
+                            alert('Failed to add train');
+                        }
+                    });
+                });
+            });
+            </script>
+            
 
-
-
-					</div>
-
-				<!-- Footer -->
-					<footer id="footer">
-						<p class="copyright">&copy; Great Design By Us</a>.</p>
-					</footer>
-
-			</div>
-
-		<!-- BG -->
-			<div id="bg"></div>
-			
-		<!-- Scripts -->
-			<script src="assets/js/jquery.min.js"></script>
-			<script src="assets/js/browser.min.js"></script>
-			<script src="assets/js/breakpoints.min.js"></script>
-			<script src="assets/js/util.js"></script>
-			<script src="assets/js/main.js"></script>
-			<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-			<script src="assets/js/mapInit.js"></script>
-			<script>
-				document.querySelector('#login form').addEventListener('submit', function(event) {
-				event.preventDefault(); // Prevent the form from submitting normally
-
-				const formData = new FormData(this);
-				fetch('/login', {
-				method: 'POST',
-				body: formData
-				})
-				.then(response => response.json()) // Parse JSON response
-				.then(data => {
-				if (data.loginSuccess) {
-					localStorage.setItem('isLoggedIn', 'true');
-					window.location.href = '/notifications'; // Adjust if necessary
-				} else {
-					alert(data.message); // Show login failure message from server
-				}
-				})
-				.catch(error => console.error('Error:', error));
-			});
-
-			</script>
-			  
-			
-
-
-	</body>
+    
+        
 </html>
