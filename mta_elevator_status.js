@@ -56,7 +56,6 @@ document.addEventListener('DOMContentLoaded', function() {
             es: 'Ninguno',
             fr: 'Aucun'
         }
-        // ... Add more translation keys and corresponding translations
     };
     
 
@@ -73,7 +72,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     function displayElevatorStatus(elevatorData) {
-        statusDisplay.innerHTML = '';  // Clear existing content
+        statusDisplay.innerHTML = '';  
     
         elevatorData.forEach((elevator) => {
             const div = document.createElement('div');
@@ -90,7 +89,6 @@ document.addEventListener('DOMContentLoaded', function() {
             `;
             statusDisplay.appendChild(div);
         });
-        // Translate the page content after it has been added
         translatePage(document.getElementById('language-selector').value);
     }
     
@@ -103,11 +101,9 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Language selector event listener
     document.getElementById('language-selector').addEventListener('change', function() {
         translatePage(this.value);
     });
 
-    // Initial fetch and display of elevator status
     fetchElevatorStatus();
 });
