@@ -1,19 +1,31 @@
+const session = require('express-session');  // Add this line
 const express = require('express');
 const path = require('path');
 const app = express();
+
+app.use(session({
+    secret: 'your_secret_key', // Choose a secret key for session encryption
+    resave: false,
+    saveUninitialized: false, 
+    cookie: { secure: 'auto', httpOnly: true } 
+}));
+
 const { spawn } = require('child_process');
 const { MongoClient } = require('mongodb');
 const bcrypt = require('bcryptjs');
 const client = new MongoClient("mongodb+srv://testuser:testuser123@cluster0.irugazx.mongodb.net/");
+let db;
 
 async function connectDB() {
     try {
         await client.connect();
         console.log("Connected to MongoDB");
+        db = client.db("Cluster0"); // This assigns the database connection to the 'db' variable
     } catch (error) {
         console.error("Could not connect to MongoDB", error);
     }
 }
+
 connectDB();
 
 app.use(express.json());
@@ -59,30 +71,39 @@ app.get('/weather', (req, res) => {
 // Login endpoint
 app.post('/login', async (req, res) => {
     const { id, password } = req.body;
-
-    if (!id || !password) {
-        return res.status(400).json({ loginSuccess: false, message: 'Both ID and password are required' });
-    }
-
-    const db = client.db("Cluster0");
     const users = db.collection("ACL");
-
     try {
         const user = await users.findOne({ id: id });
         if (!user) {
-            return res.status(404).json({ loginSuccess: false, message: 'User not found' });
+            return res.status(401).json({ loginSuccess: false, message: 'User not found' });
         }
+
         const isMatch = await bcrypt.compare(password, user.password);
-        if (isMatch) {
-            res.json({ loginSuccess: true, message: 'Logged in successfully', userId: id });
-        } else {
-            res.status(401).json({ loginSuccess: false, message: 'Incorrect password' });
+        if (!isMatch) {
+            return res.status(401).json({ loginSuccess: false, message: 'Invalid credentials' });
         }
+
+        req.session.userId = user._id; // Storing user's session
+        res.json({ loginSuccess: true, message: 'Logged in successfully' });
     } catch (error) {
         console.error("Login error:", error);
         res.status(500).json({ loginSuccess: false, message: 'Server error' });
     }
 });
+
+// Logout endpoint
+app.get('/logout', (req, res) => {
+    req.session.destroy(err => {
+        if (err) {
+            console.error('Failed to destroy session', err);
+            res.json({ logoutSuccess: false, message: 'Logout failed' });
+        } else {
+            res.clearCookie('connect.sid'); // Assuming you are using express-session
+            res.json({ logoutSuccess: true, message: 'Logged out successfully' });
+        }
+    });
+});
+
 
 
 // Registration endpoint
@@ -93,7 +114,7 @@ app.post('/register', async (req, res) => {
         return res.status(400).json({ registerSuccess: false, message: 'Both ID and password are required' });
     }
 
-    const db = client.db("Cluster0"); // Make sure this matches your MongoDB database
+   
     const users = db.collection("ACL"); // Make sure this matches your MongoDB collection
 
     try {
@@ -110,6 +131,22 @@ app.post('/register', async (req, res) => {
         res.status(500).json({ registerSuccess: false, message: 'Server error' });
     }
 });
+
+
+app.get('/get-routes', async (req, res) => {
+    if (!req.session.userId) {
+        return res.status(401).json({ success: false, message: 'User not authenticated' });
+    }
+
+    try {
+        const routes = await db.collection("Train").find({ username: req.session.userId }).toArray();
+        res.json({ success: true, routes: routes });
+    } catch (error) {
+        console.error("Error retrieving routes:", error);
+        res.status(500).json({ success: false, message: 'Failed to retrieve routes' });
+    }
+});
+
 
 // Fetching favorite trains
 app.get('/favorites/:userId', async (req, res) => {
@@ -132,6 +169,14 @@ app.post('/favorites/add', async (req, res) => {
     } catch (error) {
         console.error("Error adding favorite train:", error);
         res.status(500).json({ success: false, message: 'Failed to add favorite train' });
+    }
+});
+// Endpoint to check if user is logged in
+app.get('/check-session', async (req, res) => {
+    if (req.session.userId) {
+        res.json({ isLoggedIn: true });
+    } else {
+        res.json({ isLoggedIn: false });
     }
 });
 

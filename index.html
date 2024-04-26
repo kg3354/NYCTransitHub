@@ -4,6 +4,7 @@
 -->
 <html>
     <head>
+        
         <title id="page-title">NY Real Time Transit Map</title>
         <meta charset="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
@@ -74,10 +75,15 @@
                 <nav>
                     <ul>
                         <li><a href="#intro" id="nav-intro">Intro</a></li>
-                        <li><a href="#map" id="nav-map"> Map</a></li>
+                        <li><a href="#map" id="nav-map">Map</a></li>
                         <li><a href="#about" id="nav-about">About</a></li>
                         <li><a href="#contact" id="nav-contact">Contact</a></li>
                         <li><a href="#login" id="nav-login">Login</a></li>
+                        <!-- Logout button, initially hidden -->
+                        <li><a href="#" id="logout-button" style="display:none;">Logout</a></li>
+                        <li><a href="#routes" id="nav-routes" style="display:none;">Routes</a></li>
+                        <li><a href="#services" id="nav-service" style="display:none;">Services</a></li>
+
                         <select id="language-select">
                             <option value="en">English</option>
                             <option value="zh">中文</option>
@@ -139,23 +145,24 @@
 
                 <!-- Login -->
                 <article id="login">
-                    <h2 class="major" id="login-title">Login</h2>
-                    <form id="login-form">
-                        <div class="fields">
-                            <div class="field half">
-                                <label for="username-login">User Name</label>
-                                <input type="text" id="username-login" />
-                            </div>
-                            <div class="field half">
-                                <label for="password-login">Password</label>
-                                <input type="password" id="password-login" />
-                            </div>
+                    <h2 class="major">Login</h2>
+                    <form id="login-form" method="POST">
+                        <div class="field">
+                            <label for="username-login">Username</label>
+                            <input type="text" id="username-login" name="username" required>
+                        </div>
+                        <div class="field">
+                            <label for="password-login">Password</label>
+                            <input type="password" id="password-login" name="password" required>
                         </div>
                         <ul class="actions">
-                            <li><input type="submit" value="Login" class="primary" /></li>
+                            <li><input type="submit" value="Login" class="primary"></li>
                         </ul>
+                        <li><a href="#register">Register</a></li>
                     </form>
+                    
                 </article>
+                
                 
                 
 
@@ -185,7 +192,82 @@
                     <div id="train-list"></div>
                 </article>
                 
+                <article id="routes">
+                    <h2 class="major">Routes</h2>
+                    <p id="intro-description">Instruction routes:</p>
+                </article>
+                <article id="services">
+                    <style>
+                        body {
+                            font-family: Arial, sans-serif;
+                            margin: 0;
+                            padding: 0;
+                            display: flex;
+                            flex-direction: column;
+                            align-items: center;
+                        }
+                        .language-selector {
+                            margin-top: 20px;
+                        }
+                        .btn {
+                            display: inline-block;
+                            background-color: #0056b3;
+                            color: #ffffff;
+                            padding: 10px 20px;
+                            margin: 20px 0;
+                            border-radius: 5px;
+                            text-decoration: none;
+                            transition: background-color 0.3s;
+                        }
+                        .btn:hover {
+                            background-color: #003d82;
+                        }
+                        .elevator-entry {
+                            background-color: #000000;
+                            border: 1px solid #ddd;
+                            padding: 10px;
+                            margin-bottom: 10px;
+                            border-radius: 5px;
+                            width: 80%;
+                            max-width: 800px; 
+                        }
+                        .elevator-entry h2 {
+                            color: #0056b3;
+                        }
+                        .elevator-entry p {
+                            margin: 5px 0;
+                        }
+                        h1 {
+                            margin-top: 20px;
+                        }
+                        .service-alert-title {
+                            margin-top: 20px;
+                            font-size: 28px; 
+                            font-weight: bold; 
+                        }
+                    </style>
+                    
+                </head>
+                <body>
+                    
+                    <div class="language-selector">
+                        <select id="language-selector" onchange="translatePage(this.value)">
+                            <option value="en">English</option>
+                            <option value="es">Spanish</option>
+                            <option value="fr">French</option>
+                        </select>
+                    </div>
                 
+                    <div class="service-alert-title">Service Alerts</div>
+                    <div id="service-alerts-status"></div>
+                    <script src="service_alert.js"></script>
+                
+                    <div id="elevator-status"></div>
+                    <script src="mta_elevator_status.js"></script>
+                
+                </body>
+                    
+                </article>
             </div>
 
             <!-- Footer -->
@@ -350,103 +432,55 @@
           
         </script>
     </body>
+   
     <script>
         document.getElementById('login-form').addEventListener('submit', function(event) {
-            // event.preventDefault();
-        
-            const id = document.getElementById('username-login').value;
+            event.preventDefault();
+            const username = document.getElementById('username-login').value;
             const password = document.getElementById('password-login').value;
-        
+
             fetch('/login', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ id: id, password: password })
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id: username, password: password })
             })
             .then(response => response.json())
             .then(data => {
+                alert(data.message);
                 if (data.loginSuccess) {
                     console.log('Login successful');
-                    document.getElementById('login-title').innerText = `Logged in as: ${data.userId}`;
-                    document.getElementById('login-form').style.display = 'none';
-                    document.getElementById('favorite-trains').style.display = 'block'; // Show favorite trains section
-                    loadFavoriteTrains(data.userId); // Function to load favorite trains
+                    document.getElementById('nav-login').style.display = 'none';
+                    document.getElementById('logout-button').style.display = '';
+                    document.getElementById('nav-routes').style.display = '';
+                    document.getElementById('nav-service').style.display = '';
+                }
+            })
+            .catch(error => console.error('Error:', error));
+        });
+
+        document.getElementById('logout-button').addEventListener('click', function(event) {
+            event.preventDefault(); // Prevent default link behavior
+
+            fetch('/logout')
+            .then(response => response.json())
+            .then(data => {
+                if (data.logoutSuccess) {
+                    console.log('Logout successful');
+                    // Explicitly redirect to the home page or clear the hash
+                    window.location.href = window.location.origin; // Redirect to the base URL
                 } else {
-                    alert(data.message);
+                    alert('Logout failed: ' + data.message);
                 }
             })
             .catch(error => {
                 console.error('Error:', error);
-                alert('Failed to connect to the server.');
+                alert('Logout error: ' + error.message);
             });
         });
-        </script>
-        
-        
-        <script>
-            document.addEventListener('DOMContentLoaded', function() {
-                // Handle registration
-                document.getElementById('register-form').addEventListener('submit', function(event) {
-                    event.preventDefault(); 
-                    const id = document.getElementById('username-register').value;
-                    const password = document.getElementById('password-register').value;
-            
-                    fetch('/register', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ id, password })
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                        alert(data.message);
-                        if (data.registerSuccess) {
-                            console.log('Registration successful');
-                        }
-                    })
-                    .catch(error => console.error('Error:', error));
-                });
-            
-                // Load and manage favorite trains
-                function loadFavoriteTrains(userId) {
-                    fetch(`/favorites/${userId}`)
-                    .then(response => response.json())
-                    .then(trains => {
-                        const trainList = document.getElementById('train-list');
-                        trainList.innerHTML = ''; // Clear existing
-                        trains.forEach(train => {
-                            const trainElement = document.createElement('div');
-                            trainElement.textContent = train;
-                            trainList.appendChild(trainElement);
-                        });
-                    });
-                }
-            
-                // Handle adding a new favorite train
-                document.getElementById('train-form').addEventListener('submit', function(event) {
-                    event.preventDefault();
-                    const train = document.getElementById('train-input').value;
-                    const userId = document.getElementById('username-login').value; // Ensure this ID is available
-            
-                    fetch('/favorites/add', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ id: userId, train })
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.success) {
-                            console.log('Train added');
-                            loadFavoriteTrains(userId); // Reload the list
-                        } else {
-                            alert('Failed to add train');
-                        }
-                    });
-                });
-            });
-            </script>
-            
 
-    
         
+ 
+        </script>
+    
+
 </html>
