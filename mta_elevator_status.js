@@ -4,57 +4,57 @@ document.addEventListener('DOMContentLoaded', function() {
         station: {
             en: 'Station',
             es: 'Estación',
-            fr: 'Station'
+            zh: '车站'
         },
         trainLines: {
             en: 'Train Lines',
             es: 'Líneas de Tren',
-            fr: 'Lignes de train'
+            zh: '火车线路'
         },
         serving: {
             en: 'Serving',
             es: 'Sirviendo',
-            fr: 'Desservant'
+            zh: '服务'
         },
         adaCompliant: {
             en: 'ADA Compliant',
             es: 'Cumple con ADA',
-            fr: 'Conforme ADA'
+            zh: '符合ADA'
         },
         active: {
             en: 'Active',
             es: 'Activo',
-            fr: 'Actif'
+            zh: '活跃'
         },
         description: {
             en: 'Description',
             es: 'Descripción',
-            fr: 'Description'
+            zh: '描述'
         },
         busConnections: {
             en: 'Bus Connections',
             es: 'Conexiones de autobús',
-            fr: 'Connexions de bus'
+            zh: '巴士连接'
         },
         alternativeRoutes: {
             en: 'Alternative Routes',
             es: 'Rutas Alternativas',
-            fr: 'Itinéraires alternatifs'
+            zh: '替代路线'
         },
         yes: {
             en: 'Yes',
             es: 'Sí',
-            fr: 'Oui'
+            zh: '是'
         },
         no: {
             en: 'No',
             es: 'No',
-            fr: 'Non'
+            zh: '否'
         },
         none: {
             en: 'None',
             es: 'Ninguno',
-            fr: 'Aucun'
+            zh: '无'
         }
     };
     

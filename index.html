@@ -9,7 +9,7 @@
         <meta charset="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
         <link rel="stylesheet" href="assets/css/main.css" />
-        <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+        
         <noscript><link rel="stylesheet" href="assets/css/noscript.css" /></noscript>
     </head>
     <body class="is-preload">
@@ -23,7 +23,7 @@
                         <p id="site-description">A web application to offer real-time updates, schedules, and transit information for New York City public transportation system, utilizing the MTA API.</p>
                     </div>
                     
-                    <h2 id="site-title">Weather Information</h1>
+                    <h2 id="site-title">Weather Information</h2>
                     <div id="weather">
                         <p id="temp"></p>
                         <p id="condition"></p>
@@ -83,12 +83,13 @@
                         <li><a href="#" id="logout-button" style="display:none;">Logout</a></li>
                         <li><a href="#routes" id="nav-routes" style="display:none;">Routes</a></li>
                         <li><a href="#services" id="nav-service" style="display:none;">Services</a></li>
-
+                        <li>
                         <select id="language-select">
                             <option value="en">English</option>
                             <option value="zh">中文</option>
                             <option value="es">Español</option>
                         </select>
+                        </li>
                     </ul>
                 </nav>
             </header>
@@ -106,9 +107,13 @@
                 <article id="map">
                     <h2 class="major" id="map-title">Map</h2>
                     <p id="map-description">The awesome map is shown below.</p>
-                    <li><a href="https://new.mta.info/map/5341" id="nav-paper-map">Paper Map</a></li>
-                    <li><a href="https://map.mta.info/" id="nav-rt-map">Real Time Map</a></li>
-                    <div id="mapid" style="height: 400px;"></div>
+                    <li><a href="https://map.mta.info/" id="nav-real-map">Real Time Map</a></li>
+                    <br>
+                  
+                    <li><a id="nav-paper-map">Paper Map</a></li>
+                    <embed src="images/SubwayMap.pdf" width="600px" height="1000px" />
+                   
+                   
                 </article>
 
                 <!-- About -->
@@ -143,59 +148,192 @@
                     </form>
                 </article>
 
-                <!-- Login -->
+                <!-- Login Form -->
                 <article id="login">
-                    <h2 class="major">Login</h2>
+                    <h2 class="major" id="login-title">Login</h2>
                     <form id="login-form" method="POST">
                         <div class="field">
-                            <label for="username-login">Username</label>
+                            <label for="username-login" id="username-login-label">Username</label>
                             <input type="text" id="username-login" name="username" required>
                         </div>
+                        <br>
                         <div class="field">
-                            <label for="password-login">Password</label>
+                            <label for="password-login" id="password-login-label">Password</label>
                             <input type="password" id="password-login" name="password" required>
                         </div>
+                        <br>
                         <ul class="actions">
-                            <li><input type="submit" value="Login" class="primary"></li>
+                            <li><input type="submit" value="Login" id="login-button" class="primary"></li>
                         </ul>
-                        <li><a href="#register">Register</a></li>
                     </form>
-                    
+                    <li><a href="#register" id="register-title">Register</a></li>
                 </article>
-                
-                
-                
 
+                <!-- Registration Form -->
                 <article id="register">
-                    <h2 class="major">Register</h2>
+                    <h2 class="major" id="register-title">Register</h2>
                     <form id="register-form">
                         <div class="field">
-                            <label for="username-register">Username</label>
+                            <label for="username-register" id="username-register-label">Username</label>
                             <input type="text" id="username-register" name="username" required>
                         </div>
+                        <br>
                         <div class="field">
-                            <label for="password-register">Password</label>
+                            <label for="password-register" id="password-register-label">Password</label>
                             <input type="password" id="password-register" name="password" required>
                         </div>
+                        <br>
                         <ul class="actions">
-                            <li><input type="submit" value="Register" class="primary"></li>
+                            <li><input type="submit" value="Register" id="register-button" class="primary"></li>
                         </ul>
                     </form>
                 </article>
+
                 
-                <article id="favorite-trains" style="display:none;">
-                    <h2 class="major">Favorite Trains</h2>
-                    <form id="train-form">
-                        <input type="text" id="train-input" placeholder="Add a train (e.g., A, 1)" required>
-                        <button type="submit">Add Train</button>
-                    </form>
-                    <div id="train-list"></div>
-                </article>
+                
                 
                 <article id="routes">
-                    <h2 class="major">Routes</h2>
-                    <p id="intro-description">Instruction routes:</p>
+                    <h2 class="major" id="your-routes">Your Routes</h2>
+                    <div id="userRoutes"></div>
+                    <p></p>
+                    <select id="subwayLineSelect">
+                        <option value="A">A</option>
+                        <option value="B">B</option>
+                        <option value="C">C</option>
+                        <option value="D">D</option>
+                        <option value="E">E</option>
+                        <option value="F">F</option>
+                        <option value="G">G</option>
+                        <option value="J">J</option>
+                        <option value="M">M</option>
+                        <option value="N">N</option>
+                        <option value="Q">Q</option>
+                        <option value="R">R</option>
+                        <option value="W">W</option>
+                        <option value="L">L</option>
+                        <option value="1">1</option>
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                        <option value="4">4</option>
+                        <option value="5">5</option>
+                        <option value="6">6</option>
+                        <option value="7">7</option>
+                    </select>
+                    <button id="add-route" onclick="addRoute()">Add Route</button>
+                    <button id="remove-route" onclick="removeRoute()">Remove Route</button>
+                    <p></p>
+                    <select id="directionSelect">
+                        <option value="N">N</option>
+                        <option value="S">S</option>
+                    </select>
+                    <button id="get-recommendation" onclick="getRecommendation()">Get Recommendation</button>
+                    <p></p>
+                    <div id="recommendationResults"></div>
                 </article>
+                
+                
+                <script>
+                    function fetchRoutes() {
+                        fetch('/routes')
+                            .then(response => response.json())
+                            .then(routes => {
+                                const userRoutes = document.getElementById('userRoutes');
+                                userRoutes.innerHTML = ''; // Clear the list
+                                routes.forEach(route => {
+                                    const div = document.createElement('div');
+                                    div.textContent = route.name;
+                                    userRoutes.appendChild(div);
+                                });
+                            })
+                            .catch(error => console.error('Failed to load routes:', error));
+                    }
+
+                
+                    function addRoute() {
+                        const subwayLineSelect = document.getElementById('subwayLineSelect');
+                        const routeName = subwayLineSelect.value;
+                        fetch('/routes', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ routeName })
+                        }).then(response => {
+                            if (response.ok) {
+                                fetchRoutes(); // Refresh the list
+                            } else {
+                                console.error('Failed to add route');
+                            }
+                        });
+                    }
+                
+                    function removeRoute() {
+                        const subwayLineSelect = document.getElementById('subwayLineSelect');
+                        const routeName = subwayLineSelect.value;  // Use the same dropdown for deletion
+                        fetch('/routes', {
+                            method: 'DELETE',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ routeName })
+                        }).then(response => {
+                            if (response.ok) {
+                                fetchRoutes(); // Refresh the list
+                            } else {
+                                console.error('Failed to remove route');
+                            }
+                        });
+                    }
+                    
+                    function getRecommendation() {
+                        const line = document.getElementById('subwayLineSelect').value;
+                        const direction = document.getElementById('directionSelect').value;
+
+                        fetch('/getRecommendation', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({ line, direction })
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            displayResults(data);
+                        })
+                        .catch(error => console.error('Error:', error));
+                    }
+
+                    function displayResults(data) {
+                        const resultElement = document.getElementById('recommendationResults');
+                        if (data.Error) {
+                            resultElement.innerHTML = `<p>Error: ${data.Error}</p>`;
+                        } else {
+                            const locationInfo = data['Location Info'];
+                            const tripDetails = data['Trip Details'];
+                            const stopsDetails = data['Stops Details'];
+                            resultElement.innerHTML = `
+                                <h3>Current Location</h3>
+                                <p>Latitude: ${locationInfo['Current Latitude']}, Longitude: ${locationInfo['Current Longitude']}</p>
+                                <h3>Trip Details</h3>
+                                <p>Route ID: ${tripDetails['Route ID']}</p>
+                                <p>Direction: ${tripDetails['Direction']}</p>
+                                <p>Headsign: ${tripDetails['Headsign']}</p>
+                                <p>Departure Time: ${tripDetails['Departure Time']}</p>
+                                <p>Current Location: ${tripDetails['Current Location']}</p>
+                                <p>Location Status: ${tripDetails['Location Status']}</p>
+                                <p>Last Position Update: ${tripDetails['Last Position Update']}</p>
+                                <h3>Stops Details</h3>
+                                <p>First Stop: ${stopsDetails['First Stop']}</p>
+                                <p>Last Stop: ${stopsDetails['Last Stop']}</p>
+                                <p>Total Stops: ${stopsDetails['Total Stops']}</p>
+                            `;
+                        }
+                    }
+                
+
+                
+                    document.addEventListener('DOMContentLoaded', function() {
+                        fetchRoutes();
+                    });
+                </script>
+
+
                 <article id="services">
                     <style>
                         body {
@@ -254,7 +392,7 @@
                         <select id="language-selector" onchange="translatePage(this.value)">
                             <option value="en">English</option>
                             <option value="es">Spanish</option>
-                            <option value="fr">French</option>
+                            <option value="zh">Chinese</option>
                         </select>
                     </div>
                 
@@ -418,7 +556,85 @@
                     en: "Register Now",
                     zh: "现在注册",
                     es: "Registrarse Ahora"
+                },
+
+                "logout-button": {
+                    en: "Logout",
+                    zh: "退出登录",
+                    es: "Cerrar sesión"
+                },
+                "nav-routes": {
+                    en: "FavRoutes",
+                    zh: "收藏的地铁线",
+                    es: "Rutas Favoritas"
+                },
+                "nav-service": {
+                    en: "Services",
+                    zh: "当前运维",
+                    es: "Estado de los Servicios"
+                },
+                "your-routes": {
+                    en: "Your Routes",
+                    zh: "你的路线",
+                    es: "Tus Rutas"
+                },
+                "add-route": {
+                    en: "Add Route",
+                    zh: "添加路线",
+                    es: "Añadir Ruta"
+                },
+                "remove-route": {
+                    en: "Remove Route",
+                    zh: "删除路线",
+                    es: "Eliminar Ruta"
+                },
+                "username-login-label": {
+                    en: "Username",
+                    zh: "用户名",
+                    es: "Nombre de usuario"
+                },
+                "password-login-label": {
+                    en: "Password",
+                    zh: "密码",
+                    es: "Contraseña"
+                },
+                "login-button": {
+                    en: "Login",
+                    zh: "登录",
+                    es: "Iniciar sesión"
+                },
+                "register-button": {
+                    en: "Register",
+                    zh: "注册",
+                    es: "Registrarse"
+                },
+                "username-register-label": {
+                    en: "Username",
+                    zh: "用户名",
+                    es: "Nombre de usuario"
+                },
+                "password-register-label": {
+                    en: "Password",
+                    zh: "密码",
+                    es: "Contraseña"
+                },
+                
+                "north": {
+                    en: "North",
+                    zh: "北",
+                    es: "Norte"
+                },
+                "south": {
+                    en: "South",
+                    zh: "南",
+                    es: "Sur"
+                },
+                "get-recommendation": {
+                    en: "Get Recommendation",
+                    zh: "获取推荐",
+                    es: "Obtener recomendaciones"
                 }
+
             };
 
             document.getElementById('language-select').addEventListener('change', function() {

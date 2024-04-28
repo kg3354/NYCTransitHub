@@ -1,74 +1,45 @@
-const session = require('express-session');  // Add this line
 const express = require('express');
+const session = require('express-session');
+const MongoStore = require('connect-mongo');
 const path = require('path');
-const app = express();
-
-app.use(session({
-    secret: 'your_secret_key', // Choose a secret key for session encryption
-    resave: false,
-    saveUninitialized: false, 
-    cookie: { secure: 'auto', httpOnly: true } 
-}));
-
 const { spawn } = require('child_process');
 const { MongoClient } = require('mongodb');
 const bcrypt = require('bcryptjs');
-const client = new MongoClient("mongodb+srv://testuser:testuser123@cluster0.irugazx.mongodb.net/");
+
+const app = express();
+const client = new MongoClient(""); // add the actual mongo db client api
 let db;
 
+// Initialize MongoDB Connection
 async function connectDB() {
     try {
         await client.connect();
         console.log("Connected to MongoDB");
-        db = client.db("Cluster0"); // This assigns the database connection to the 'db' variable
+        db = client.db("Cluster0");
     } catch (error) {
         console.error("Could not connect to MongoDB", error);
     }
 }
-
 connectDB();
 
-app.use(express.json());
+// Session Configuration
+app.use(session({
+    secret: 'aVerySecuredKey',
+    resave: false,
+    saveUninitialized: false,
+    store: MongoStore.create({ client: client }),
+    cookie: { secure: process.env.NODE_ENV === 'production', httpOnly: true, maxAge: 24 * 60 * 60 * 1000 } // 24 hours
+}));
 
-// Serve static files from the directory where `index.html` is located
+app.use(express.json());
 app.use(express.static(path.join(__dirname)));
 
-// Route to ensure your site defaults to `index.html`
+// Default route
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-
-
-app.get('/weather', (req, res) => {
-    const pythonProcess = spawn('python', ['locationAndWeather.py']);
-
-    let outputData = '';
-    pythonProcess.stdout.on('data', (data) => {
-        const dataString = data.toString();
-        console.log(`stdout: ${dataString}`); // Log each chunk of data received from stdout
-        outputData += dataString;
-    });
-
-    pythonProcess.stderr.on('data', (data) => {
-        const errorString = data.toString();
-        console.error(`stderr: ${errorString}`); // Log any errors received from stderr
-    });
-
-    pythonProcess.on('close', (code) => {
-        if (code !== 0) {
-            console.log(`Python script exited with code ${code}`); // Log the exit code
-            res.status(500).send('Failed to retrieve data');
-        } else {
-            console.log('Sending data to client');
-            console.log(`Complete output data: ${outputData}`); // Log the complete output data before sending it
-            res.send(outputData);
-        }
-    });
-});
-
-// Set up other routes for API or form submissions if needed
-// Login endpoint
+// User Login
 app.post('/login', async (req, res) => {
     const { id, password } = req.body;
     const users = db.collection("ACL");
@@ -83,7 +54,7 @@ app.post('/login', async (req, res) => {
             return res.status(401).json({ loginSuccess: false, message: 'Invalid credentials' });
         }
 
-        req.session.userId = user._id; // Storing user's session
+        req.session.userId = user._id;  // Store user's session
         res.json({ loginSuccess: true, message: 'Logged in successfully' });
     } catch (error) {
         console.error("Login error:", error);
@@ -91,20 +62,47 @@ app.post('/login', async (req, res) => {
     }
 });
 
-// Logout endpoint
+// User Logout
 app.get('/logout', (req, res) => {
     req.session.destroy(err => {
         if (err) {
             console.error('Failed to destroy session', err);
             res.json({ logoutSuccess: false, message: 'Logout failed' });
         } else {
-            res.clearCookie('connect.sid'); // Assuming you are using express-session
+            res.clearCookie('connect.sid');
             res.json({ logoutSuccess: true, message: 'Logged out successfully' });
         }
     });
 });
 
 
+
+app.get('/weather', (req, res) => {
+    const pythonProcess = spawn('python', ['locationAndWeather.py']);
+
+    let outputData = '';
+    pythonProcess.stdout.on('data', (data) => {
+        const dataString = data.toString();
+        console.log(`stdout: ${dataString}`); 
+        outputData += dataString;
+    });
+
+    pythonProcess.stderr.on('data', (data) => {
+        const errorString = data.toString();
+        console.error(`stderr: ${errorString}`); 
+    });
+
+    pythonProcess.on('close', (code) => {
+        if (code !== 0) {
+            console.log(`Python script exited with code ${code}`); 
+            res.status(500).send('Failed to retrieve data');
+        } else {
+            console.log('Sending data to client');
+            console.log(`Complete output data: ${outputData}`);
+            res.send(outputData);
+        }
+    });
+});
 
 // Registration endpoint
 app.post('/register', async (req, res) => {
@@ -115,7 +113,7 @@ app.post('/register', async (req, res) => {
     }
 
    
-    const users = db.collection("ACL"); // Make sure this matches your MongoDB collection
+    const users = db.collection("ACL"); 
 
     try {
         const existingUser = await users.findOne({ id: id });
@@ -148,50 +146,91 @@ app.get('/get-routes', async (req, res) => {
 });
 
 
-// Fetching favorite trains
-app.get('/favorites/:userId', async (req, res) => {
-    const { userId } = req.params;
+
+
+
+app.get('/routes', async (req, res) => {
+    if (!req.session.userId) {
+        return res.status(401).send("User not authenticated");
+    }
     try {
-        const favorites = await db.collection("trains").find({ id: userId }).toArray();
-        res.json(favorites.map(fav => fav.Train));
+        const routes = await db.collection("routes").find({ userId: req.session.userId }).toArray();
+        res.json(routes.map(route => ({ name: route.name })));
     } catch (error) {
-        console.error("Error retrieving favorites:", error);
-        res.status(500).json({ error: "Failed to retrieve favorites" });
+        console.error("Error retrieving routes:", error);
+        res.status(500).send("Failed to retrieve routes");
     }
 });
 
-// Adding a favorite train
-app.post('/favorites/add', async (req, res) => {
-    const { id, Train } = req.body;
-    try {
-        await db.collection("trains").insertOne({ id, Train });
-        res.json({ success: true });
-    } catch (error) {
-        console.error("Error adding favorite train:", error);
-        res.status(500).json({ success: false, message: 'Failed to add favorite train' });
+
+
+app.post('/routes', async (req, res) => {
+    if (!req.session.userId) {
+        return res.status(401).send("User not authenticated");
     }
-});
-// Endpoint to check if user is logged in
-app.get('/check-session', async (req, res) => {
-    if (req.session.userId) {
-        res.json({ isLoggedIn: true });
-    } else {
-        res.json({ isLoggedIn: false });
+
+    const { routeName } = req.body;
+    if (!routeName) {
+        return res.status(400).send("Route name is required");
+    }
+
+    try {
+        const exists = await db.collection("routes").findOne({ userId: req.session.userId, name: routeName });
+        if (exists) {
+            return res.status(409).send("Route already exists for this user.");
+        }
+
+        await db.collection("routes").insertOne({ userId: req.session.userId, name: routeName });
+        res.status(201).send("Route added successfully");
+    } catch (error) {
+        console.error("Error adding route:", error);
+        res.status(500).send("Failed to add route");
     }
 });
 
-// Removing a favorite train
-app.post('/favorites/remove', async (req, res) => {
-    const { id, Train } = req.body;
+
+
+
+app.delete('/routes', async (req, res) => {
+    if (!req.session.userId) {
+        return res.status(401).send("User not authenticated");
+    }
+
+    const { routeName } = req.body;
+    if (!routeName) {
+        return res.status(400).send("Route name is required");
+    }
+
     try {
-        const result = await db.collection("trains").deleteOne({ id, Train });
-        res.json({ success: result.deletedCount > 0 });
+        const result = await db.collection("routes").deleteOne({ userId: req.session.userId, name: routeName });
+        if (result.deletedCount === 0) {
+            return res.status(404).send("Route not found or already deleted");
+        }
+        res.send("Route deleted successfully");
     } catch (error) {
-        console.error("Error removing favorite train:", error);
-        res.status(500).json({ success: false, message: 'Failed to remove favorite train' });
+        console.error("Error deleting route:", error);
+        res.status(500).send("Failed to delete route");
     }
 });
 
+app.post('/getRecommendation', (req, res) => {
+    const { line, direction } = req.body;
+    const pythonProcess = spawn('python', ['get_recommendation.py', line, direction]);
+
+    let dataString = '';
+    pythonProcess.stdout.on('data', (data) => {
+        dataString += data.toString();
+    });
+
+    pythonProcess.on('close', (code) => {
+        if (code !== 0) {
+            console.log(`Process exited with code ${code}`);
+            res.status(500).send({ message: "Failed to retrieve data" });
+        } else {
+            res.send(JSON.parse(dataString));
+        }
+    });
+});
 
 
 // Set the port for the application
