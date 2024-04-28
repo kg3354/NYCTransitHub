@@ -12,7 +12,7 @@ if response.status_code == 200:
     params = {
         'lat': latitude,
         'lon': longitude,
-        'appid': '35ef5871b2c5686f4956864d3a0c9a9e'
+        'appid': ''
     }
 
     # Making a GET request to retrieve weather

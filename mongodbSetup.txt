@@ -1,3 +1,0 @@
-mongodb+srv://testuser:testuser123@cluster0.irugazx.mongodb.net/
-
-["Cluster0"]["ACL"]
