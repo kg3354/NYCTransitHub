@@ -7,7 +7,7 @@ const { MongoClient } = require('mongodb');
 const bcrypt = require('bcryptjs');
 
 const app = express();
-const client = new MongoClient(""); // add the actual mongo db client api
+const client = new MongoClient(process.env.MONGO_URI);
 let db;
 
 // Initialize MongoDB Connection
